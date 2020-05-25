@@ -1,0 +1,61 @@
+#application/wordpress/mysql-deployment.yaml 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wordpress
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-mysql-svc
+  namespace: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: wordpress
+    tier: mysql
+  clusterIP: None
+---
+
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: wordpress-mysql
+  namespace: wordpress
+  labels:
+    app: wordpress
+    tier: mysql
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql
+    spec:
+      containers:
+      - image: dyadin/windows-wordpress-mysql:latest
+        imagePullPolicy: IfNotPresent
+        name: mysql
+        env:
+        - name: DBHOST
+          value: wordpress-mysql-svc
+        - name: DBPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        stdin: true
+        tty: true
+

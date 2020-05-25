@@ -1,0 +1,54 @@
+#application/wordpress/wordpress-deployment.yaml 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-php-svc
+  namespace: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 9000
+      protocol: TCP
+      targetPort: 9000
+  selector:
+    app: wordpress
+    tier: php
+  clusterIP: None
+
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: wordpress-php
+  namespace: wordpress
+  labels:
+    app: wordpress
+    tier: php
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: php
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: php
+    spec:
+      containers:
+      - image: dyadin/windows-wordpress-php:latest
+        imagePullPolicy: IfNotPresent
+        name: wordpress-php
+        env:
+        - name: DBHOST
+          value: wordpress-mysql-svc
+        - name: DBPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 9000
+          name: wordpress-php
