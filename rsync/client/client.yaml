@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rsync-client
+  namespace: rsync
+  labels:
+    app: rsync-cient
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rsync-password
+  namespace: rsync
+type: Opaque
+stringData:
+  password: "123456"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rsync-client
+  namespace: rsync
+  labels:
+    app: rsync
+    tier: client
+spec:
+  selector:
+    matchLabels:
+      app: rsync
+      tier: client
+  template:
+    metadata:
+      name: rsync-client
+      labels:
+        app: rsync
+        tier: client
+    spec:
+      containers:
+      - name: rsync-client
+        image: dyadin/rsync-client:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: crontab
+          value: "* * * * * /backup.sh>>/var/log/rsync.log"
+        - name: rsync_server
+          value: "rsync-server-svc"
+        - name: username
+          value: "backupuser"
+        - name: backup_path
+          value: "/root/backup/"
+        - name: dstconfig
+          value: "common"
+        - name: password
+          valueFrom:
+            secretKeyRef:
+              name: rsync-password
+              key: password
+        volumeMounts:
+        - mountPath: /root/backup/
+          name: rsync-client
+      volumes:
+      - name: rsync-client
+        persistentVolumeClaim:
+          claimName: rsync-client
