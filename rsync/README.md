@@ -189,7 +189,7 @@ use chroot = no
 read only = no
 max connections = 10
 [common]
-comment = rsync htsec
+comment = rsync server
 path = /backup/
 ignore errors
 auth users = rsync
@@ -201,7 +201,7 @@ list = false
 
 /etc/rsyncd.motd
 ```
-rsync  rsync
+welcome to rsync server!
 ```
 
 
